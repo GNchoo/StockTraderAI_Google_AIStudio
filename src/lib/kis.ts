@@ -265,7 +265,7 @@ export class KISBroker {
 
     try {
       await this.delay(400);
-      const trId = this.isVirtual ? "VHKST01010100" : "FHKST01010100";
+      const trId = "FHKST01010100"; // 시세 조회 tr_id는 실전/모의 관계없이 동일
       const response = await axios.get(`${this.baseUrl}/uapi/domestic-stock/v1/quotations/inquire-price`, {
         params: {
           FID_COND_MRKT_DIV_CODE: "J",
@@ -276,6 +276,7 @@ export class KISBroker {
           appkey: this.appKey,
           appsecret: this.appSecret,
           tr_id: trId,
+          custtype: "P",
         },
       });
       return parseInt(response.data.output.stck_prpr);
@@ -298,11 +299,21 @@ export class KISBroker {
 
     try {
       await this.delay(400);
-      const trId = this.isVirtual ? "VHKST01010400" : "FHKST01010400";
+      const trId = "FHKST01010400"; // 시세 조회 tr_id는 실전/모의 관계없이 동일
+      const formatDate = (d: Date): string => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}${m}${day}`;
+      };
+      const endDate = formatDate(new Date());
+      const startDate = formatDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
       const response = await axios.get(`${this.baseUrl}/uapi/domestic-stock/v1/quotations/inquire-daily-price`, {
         params: {
           FID_COND_MRKT_DIV_CODE: "J",
           FID_INPUT_ISCD: ticker,
+          FID_INPUT_DATE_1: startDate,
+          FID_INPUT_DATE_2: endDate,
           FID_PERIOD_DIV_CODE: "D",
           FID_ORG_ADJ_PRC: "1",
         },
@@ -311,12 +322,33 @@ export class KISBroker {
           appkey: this.appKey,
           appsecret: this.appSecret,
           tr_id: trId,
+          custtype: "P",
         },
       });
       return response.data.output.map((item: any) => parseInt(item.stck_clpr)).reverse().slice(-days);
     } catch (error) {
       console.error(`Error fetching historical data for ${ticker}:`, error);
       return Array(days).fill(0);
+    }
+  }
+
+  private async getHashKey(body: object): Promise<string> {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/uapi/hashkey`,
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json; charset=UTF-8",
+            appkey: this.appKey,
+            appsecret: this.appSecret,
+          },
+        }
+      );
+      return response.data.BODY ?? "";
+    } catch (error) {
+      console.error("[KIS] hashkey 획득 실패:", error);
+      return "";
     }
   }
 
@@ -332,21 +364,31 @@ export class KISBroker {
         ? (type === "BUY" ? "VTTC0802U" : "VTTC0801U") 
         : (type === "BUY" ? "TTTC0802U" : "TTTC0801U");
 
-      const response = await axios.post(`${this.baseUrl}/uapi/domestic-stock/v1/trading/order-cash`, {
+      const orderBody = {
         CANO: this.cano,
         ACNT_PRDT_CD: this.acntPrdtCd,
         PDNO: ticker,
         ORD_DVSN: "01", // Market Price
         ORD_QTY: quantity.toString(),
         ORD_UNPR: "0",
-      }, {
-        headers: {
-          authorization: `Bearer ${this.accessToken}`,
-          appkey: this.appKey,
-          appsecret: this.appSecret,
-          tr_id: trId,
-        },
-      });
+      };
+      const hashkey = await this.getHashKey(orderBody);
+
+      const response = await axios.post(
+        `${this.baseUrl}/uapi/domestic-stock/v1/trading/order-cash`,
+        orderBody,
+        {
+          headers: {
+            authorization: `Bearer ${this.accessToken}`,
+            appkey: this.appKey,
+            appsecret: this.appSecret,
+            tr_id: trId,
+            "Content-Type": "application/json; charset=UTF-8",
+            hashkey: hashkey,
+            custtype: "P",
+          },
+        }
+      );
 
       return response.data.rt_cd === "0";
     } catch (error) {
