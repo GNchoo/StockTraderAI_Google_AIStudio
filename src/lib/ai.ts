@@ -36,23 +36,34 @@ Provide a JSON response with:
 
 Response format: {"score": number, "summary": "string", "recommendation": "BUY" | "SELL" | "HOLD"}`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        },
+      });
 
-    const result = JSON.parse(response.text || "{}");
-    return {
-      score: result.score || 0,
-      summary: result.summary || "No summary available",
-      recommendation: result.recommendation || "HOLD",
-    };
-  } catch (error) {
-    console.error("AI Analysis error:", error);
-    return { score: 0, summary: "Error analyzing sentiment", recommendation: "HOLD" };
+      const result = JSON.parse(response.text || "{}");
+      return {
+        score: result.score || 0,
+        summary: result.summary || "No summary available",
+        recommendation: result.recommendation || "HOLD",
+      };
+    } catch (error: any) {
+      const status = error?.status || error?.code;
+      if ((status === 429 || status === 503) && attempt < maxRetries - 1) {
+        const waitSec = Math.pow(2, attempt + 1) * 15; // 30s, 60s
+        console.warn(`[AI] Rate limited (${status}), retrying in ${waitSec}s... (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, waitSec * 1000));
+        continue;
+      }
+      console.error("AI Analysis error:", error);
+      return { score: 0, summary: "Error analyzing sentiment", recommendation: "HOLD" };
+    }
   }
+  return { score: 0, summary: "Max retries exceeded", recommendation: "HOLD" };
 }

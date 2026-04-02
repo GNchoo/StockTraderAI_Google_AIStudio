@@ -264,7 +264,7 @@ export class KISBroker {
     }
 
     try {
-      await this.delay(400);
+      await this.delay(1000);
       const trId = "FHKST01010100"; // 시세 조회 tr_id는 실전/모의 관계없이 동일
       const response = await axios.get(`${this.baseUrl}/uapi/domestic-stock/v1/quotations/inquire-price`, {
         params: {
@@ -298,7 +298,7 @@ export class KISBroker {
     }
 
     try {
-      await this.delay(400);
+      await this.delay(1000);
       const trId = "FHKST01010400"; // 시세 조회 tr_id는 실전/모의 관계없이 동일
       const formatDate = (d: Date): string => {
         const y = d.getFullYear();
@@ -359,7 +359,7 @@ export class KISBroker {
     }
 
     try {
-      await this.delay(400);
+      await this.delay(1000);
       const trId = this.isVirtual 
         ? (type === "BUY" ? "VTTC0802U" : "VTTC0801U") 
         : (type === "BUY" ? "TTTC0802U" : "TTTC0801U");
