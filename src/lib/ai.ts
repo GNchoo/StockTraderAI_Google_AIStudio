@@ -1,14 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 
+/**
+ * Google Gemini AI를 이용한 시장 감성 분석
+ */
+
 let aiInstance: GoogleGenAI | null = null;
 
 function getAI() {
   if (!aiInstance) {
-    const apiKey = process.env.GEMINI_API_KEY || "";
-    if (!apiKey) {
-      console.warn("[AI] GEMINI_API_KEY is missing. AI features will be limited.");
+    let apiKey = process.env.GEMINI_API_KEY || "";
+    
+    // .env.example의 플레이스홀더 값 확인
+    if (apiKey === "MY_GEMINI_API_KEY" || !apiKey) {
+      console.warn("[AI] GEMINI_API_KEY가 누락되었거나 유효하지 않습니다. AI 기능이 제한됩니다.");
+      apiKey = ""; // API 오류 방지를 위해 비움
     } else {
-      console.log(`[AI] Gemini API Key found (masked): ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+      console.log(`[AI] Gemini API 키 로드 완료 (마스킹): ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
     }
     aiInstance = new GoogleGenAI({ apiKey });
   }
@@ -16,54 +23,53 @@ function getAI() {
 }
 
 export async function analyzeSentiment(stockName: string, news: string[]): Promise<{
-  score: number; // -1 to 1
+  score: number; // -1 ~ 1
   summary: string;
   recommendation: "BUY" | "SELL" | "HOLD";
 }> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { score: 0, summary: "Gemini API key not set", recommendation: "HOLD" };
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    return { score: 0, summary: "Gemini API 키가 설정되지 않았습니다.", recommendation: "HOLD" };
   }
 
   const ai = getAI();
-  const prompt = `Analyze the sentiment for the stock "${stockName}" based on the following news headlines:
+  const prompt = `다음 뉴스 헤드라인과 시장 상황을 바탕으로 "${stockName}" 주식에 대한 시장 심리를 아주 정밀하게 분석해줘:
 ${news.join("\n")}
 
-Provide a JSON response with:
-1. "score": a number from -1 (very negative) to 1 (very positive).
-2. "summary": a brief summary of the sentiment (max 2 sentences).
-3. "recommendation": one of "BUY", "SELL", or "HOLD".
+분석 시 다음 사항을 고려해줘:
+- 해당 종목의 실적 발표, 시장 전망, 애널리스트 리포트의 뉘앙스.
+- 글로벌 거시 경제 상황(환율, 금리) 및 반도체/기술주 섹터의 전반적인 투자 심리.
+- 뉴스 헤드라인의 강도(매우 긍정, 긍정, 중립, 부정, 매우 부정).
 
-Response format: {"score": number, "summary": "string", "recommendation": "BUY" | "SELL" | "HOLD"}`;
+다음 JSON 형식으로 응답해줘:
+1. "score": -1.0(매우 부정/하락장)에서 1.0(매우 긍정/상승장) 사이의 소수점 숫자 (예: 0.45, -0.12). 0.0은 엄격하게 중립일 때만 사용해줘.
+2. "summary": 심리 분석 요약 (최대 2문장, 구체적인 근거 포함).
+3. "recommendation": "BUY", "SELL", "HOLD" 중 하나.
 
-  const maxRetries = 3;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
+응답 형식: {"score": number, "summary": "string", "recommendation": "BUY" | "SELL" | "HOLD"}`;
 
-      const result = JSON.parse(response.text || "{}");
-      return {
-        score: result.score || 0,
-        summary: result.summary || "No summary available",
-        recommendation: result.recommendation || "HOLD",
-      };
-    } catch (error: any) {
-      const status = error?.status || error?.code;
-      if ((status === 429 || status === 503) && attempt < maxRetries - 1) {
-        const waitSec = Math.pow(2, attempt + 1) * 15; // 30s, 60s
-        console.warn(`[AI] Rate limited (${status}), retrying in ${waitSec}s... (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, waitSec * 1000));
-        continue;
-      }
-      console.error("AI Analysis error:", error);
-      return { score: 0, summary: "Error analyzing sentiment", recommendation: "HOLD" };
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    if (!response.text) {
+      throw new Error("AI로부터 빈 응답을 받았습니다.");
     }
+
+    const result = JSON.parse(response.text);
+    return {
+      score: result.score ?? 0,
+      summary: result.summary || "요약 정보 없음",
+      recommendation: result.recommendation || "HOLD",
+    };
+  } catch (error: any) {
+    console.error("[AI] 분석 중 오류 발생:", error.message || error);
+    return { score: 0, summary: "심리 분석 중 오류가 발생했습니다.", recommendation: "HOLD" };
   }
-  return { score: 0, summary: "Max retries exceeded", recommendation: "HOLD" };
 }

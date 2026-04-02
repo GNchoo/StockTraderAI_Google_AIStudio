@@ -114,7 +114,7 @@ export default function App() {
       <div className="min-h-screen bg-[#E4E3E0] flex items-center justify-center font-mono">
         <div className="animate-pulse flex flex-col items-center">
           <Activity className="w-12 h-12 mb-4 text-[#141414]" />
-          <p className="text-sm uppercase tracking-widest">Initializing System...</p>
+          <p className="text-sm uppercase tracking-widest">시스템 초기화 중...</p>
         </div>
       </div>
     );
@@ -127,13 +127,13 @@ export default function App() {
         <div>
           <h1 className="text-4xl font-serif italic mb-2">StockTrader AI</h1>
           <p className="font-mono text-xs opacity-60 uppercase tracking-tighter">
-            Autonomous Trading Engine v1.0.4 // KIS API Integrated
+            자율 주행 트레이딩 엔진 v1.0.4 // KIS API 통합 완료
           </p>
         </div>
         
         <div className="flex items-center gap-6 mt-6 md:mt-0">
           <div className="flex flex-col items-end">
-            <span className="font-mono text-[10px] opacity-50 uppercase">Trading Mode</span>
+            <span className="font-mono text-[10px] opacity-50 uppercase">트레이딩 모드</span>
             <div className="flex gap-2 mt-1">
               <button 
                 onClick={() => switchMode("virtual")}
@@ -142,7 +142,7 @@ export default function App() {
                   status?.mode === "virtual" ? "bg-[#141414] text-[#E4E3E0]" : "opacity-40"
                 )}
               >
-                VIRTUAL
+                가상투자
               </button>
               <button 
                 onClick={() => switchMode("real")}
@@ -151,17 +151,17 @@ export default function App() {
                   status?.mode === "real" ? "bg-red-600 text-white border-red-600" : "opacity-40"
                 )}
               >
-                REAL
+                실전투자
               </button>
             </div>
           </div>
 
           <div className="flex flex-col items-end">
-            <span className="font-mono text-[10px] opacity-50 uppercase">System Status</span>
+            <span className="font-mono text-[10px] opacity-50 uppercase">시스템 상태</span>
             <div className="flex items-center gap-2">
               <div className={cn("w-2 h-2 rounded-full animate-pulse", status?.isRunning ? "bg-green-600" : "bg-red-600")} />
               <span className="font-mono text-sm uppercase font-bold">
-                {status?.isRunning ? "Active" : "Standby"}
+                {status?.isRunning ? "운영 중" : "대기 중"}
               </span>
             </div>
           </div>
@@ -176,9 +176,9 @@ export default function App() {
             )}
           >
             {status?.isRunning ? (
-              <><Square className="w-4 h-4 fill-current" /> Stop Engine</>
+              <><Square className="w-4 h-4 fill-current" /> 엔진 중지</>
             ) : (
-              <><Play className="w-4 h-4 fill-current" /> Start Engine</>
+              <><Play className="w-4 h-4 fill-current" /> 엔진 시작</>
             )}
           </button>
         </div>
@@ -191,14 +191,14 @@ export default function App() {
           <section className="border border-[#141414] p-6 bg-white/50">
             <div className="flex items-center gap-2 mb-4 opacity-50">
               <Wallet className="w-4 h-4" />
-              <span className="font-mono text-[10px] uppercase tracking-widest">Available Capital</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest">가용 자본</span>
             </div>
             <div className="text-4xl font-mono font-bold">
               ₩{status?.balance.toLocaleString()}
             </div>
             <div className="mt-4 flex items-center gap-2 text-green-600 font-mono text-xs">
               <TrendingUp className="w-3 h-3" />
-              <span>+2.4% Today</span>
+              <span>오늘 +2.4%</span>
             </div>
           </section>
 
@@ -206,20 +206,20 @@ export default function App() {
           <section className="border border-[#141414] overflow-hidden">
             <div className="bg-[#141414] text-[#E4E3E0] p-3 flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
-              <span className="font-mono text-[10px] uppercase tracking-widest">Current Portfolio</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest">현재 포트폴리오</span>
             </div>
             <div className="divide-y divide-[#141414]">
               {status?.portfolio.length === 0 ? (
-                <div className="p-8 text-center opacity-40 italic text-sm">No active positions</div>
+                <div className="p-8 text-center opacity-40 italic text-sm">보유 종목 없음</div>
               ) : (
                 status?.portfolio.map((item) => (
                   <div key={item.ticker} className="p-4 flex justify-between items-center hover:bg-white/40 transition-colors">
                     <div>
                       <div className="font-bold text-lg">{item.ticker}</div>
-                      <div className="font-mono text-[10px] opacity-50">KOSPI MARKET</div>
+                      <div className="font-mono text-[10px] opacity-50">KOSPI 시장</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-mono font-bold">{item.quantity} Shares</div>
+                      <div className="font-mono font-bold">{item.quantity} 주</div>
                       <div className="text-xs text-green-600">+1.2%</div>
                     </div>
                   </div>
@@ -236,11 +236,11 @@ export default function App() {
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-2 opacity-50">
                 <TrendingUp className="w-4 h-4" />
-                <span className="font-mono text-[10px] uppercase tracking-widest">Performance History</span>
+                <span className="font-mono text-[10px] uppercase tracking-widest">수익률 히스토리</span>
               </div>
               <div className="flex gap-4 font-mono text-[10px]">
-                <span className="text-green-600">● EQUITY</span>
-                <span className="opacity-40">○ BENCHMARK</span>
+                <span className="text-green-600">● 자산</span>
+                <span className="opacity-40">○ 벤치마크</span>
               </div>
             </div>
             <div className="h-full pb-12">
@@ -286,13 +286,13 @@ export default function App() {
             <div className="bg-[#141414] text-[#E4E3E0] p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <History className="w-4 h-4" />
-                <span className="font-mono text-[10px] uppercase tracking-widest">Execution Logs</span>
+                <span className="font-mono text-[10px] uppercase tracking-widest">실행 로그</span>
               </div>
-              <span className="font-mono text-[10px] opacity-50">REAL-TIME FEED</span>
+              <span className="font-mono text-[10px] opacity-50">실시간 피드</span>
             </div>
             <div className="flex-1 overflow-y-auto font-mono text-[11px] divide-y divide-[#141414]/10">
               {status?.logs.length === 0 ? (
-                <div className="p-8 text-center opacity-40 italic">Waiting for activity...</div>
+                <div className="p-8 text-center opacity-40 italic">활동 대기 중...</div>
               ) : (
                 status?.logs.slice().reverse().map((log, i) => (
                   <div key={i} className="p-3 flex gap-4 hover:bg-white/40 transition-colors">
@@ -306,7 +306,7 @@ export default function App() {
                             "px-1.5 py-0.5 text-[8px] font-bold rounded",
                             log.mode === "real" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
                           )}>
-                            {log.mode.toUpperCase()}
+                            {log.mode === "real" ? "실전" : "가상"}
                           </span>
                           {log.type === 'success' && <CheckCircle2 className="w-3 h-3 text-green-600" />}
                           {log.type === 'warning' && <TrendingDown className="w-3 h-3 text-orange-600" />}
@@ -331,11 +331,11 @@ export default function App() {
       </main>
 
       <footer className="max-w-7xl mx-auto mt-12 pt-8 border-t border-[#141414] flex justify-between items-center font-mono text-[10px] opacity-40">
-        <div>© 2026 STOCKTRADER AI // QUANTITATIVE RESEARCH GROUP</div>
+        <div>© 2026 STOCKTRADER AI // 퀀트 리서치 그룹</div>
         <div className="flex gap-6">
-          <span>LATENCY: 42MS</span>
-          <span>UPTIME: 99.9%</span>
-          <span>API: CONNECTED</span>
+          <span>지연시간: 42MS</span>
+          <span>가동률: 99.9%</span>
+          <span>API: 연결됨</span>
         </div>
       </footer>
     </div>
