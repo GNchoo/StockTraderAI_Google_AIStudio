@@ -63,7 +63,7 @@ export class TradingEngine {
     this.interval = setInterval(async () => {
       if (!this.isRunning) return;
       await this.runIteration();
-    }, 10000); // Check every 10 seconds for demo
+    }, 60000); // Check every 60 seconds to respect API rate limits
   }
 
   stop() {
@@ -93,8 +93,8 @@ export class TradingEngine {
   private async runIteration() {
     for (const ticker of this.stocksToWatch) {
       try {
-        // Add a small delay between stocks to be safe with rate limits
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Delay between stocks to respect KIS rate limit (초당 거래건수 제한)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         const currentPrice = await this.broker.getStockPrice(ticker);
         const historicalData = await this.broker.getHistoricalData(ticker, 50);
